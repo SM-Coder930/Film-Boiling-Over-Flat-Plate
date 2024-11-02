@@ -27,28 +27,25 @@ U_inf = mu_l * Re_L / (rho_l * L);
 % Define x vector (dimensionless x/L)
 x = linspace(0, L, 100) / L; % Added number of points for smoothness
 
-% Define local Reynolds number
+% Calculate local Reynolds number
 re_x = rho_l * U_inf * x / mu_l;
 
 % Equation (10) - Corrected Nusselt number correlation
-Nu_10 = @(x) (1/2) * ((rho_l * mu_l) / (rho_v * mu_v))^0.5 * ...
-             (Cp_v * Delta_T_sup / (h_lg * Pr)) * sqrt(rho_l * U_inf * x / mu_l);
+Nu_10 = (1/2) * ((rho_l * mu_l) / (rho_v * mu_v))^0.5 * ...
+          (Cp_v * Delta_T_sup / (h_lg * Pr)) * sqrt(re_x); 
 
-% Shear Equation
-tau = @(x) (1/2) * rho_l * U_inf^2 / ...
-    (sqrt(rho_l * mu_l * Cp_v * Delta_T_sup / (rho_v * mu_v * h_lg * Pr)) .* sqrt(rho_l * U_inf * x / mu_l));
+% Calculate shear stress
+tau_x = (1/2) * rho_l * U_inf^2 ./ (sqrt((rho_l * mu_l * Cp_v * Delta_T_sup) / (rho_v * mu_v * h_lg * Pr)) .* sqrt(re_x));
 
-tau_x = tau(x);
-tau_x(isinf(tau_x)) = NaN;
 
 % Convert Nusselt number to heat transfer coefficient (in kW/m²K)
 k_f = 0.68;  % Thermal conductivity of liquid in W/(m·K)
-h_x_10 = (Nu_10(x) * k_f ./ x) / 1000; % Convert to kW/m²K
+h_x_10 = (Nu_10 * k_f ./ x) / 1000; % Convert to kW/m²K
 
 % Handle division by zero at x/L = 0
 h_x_10(isinf(h_x_10)) = NaN;
 
-% Plot results
+% Plot results for heat transfer coefficient
 figure;
 plot(x, h_x_10, 'r--', 'LineWidth', 2);
 xlabel('$\frac{x}{L}$', 'Interpreter', 'latex');
@@ -58,11 +55,12 @@ legend('Approximated (Eq. 10)', 'Interpreter', 'latex');
 title('Local Heat Transfer Coefficient $h_x$ vs. $\frac{x}{L}$ (Equation 10)', 'Interpreter', 'latex');
 grid on;
 
+% Plot results for shear stress
 figure;
 plot(x, tau_x, 'r--', 'LineWidth', 2);
 xlabel('$\frac{x}{L}$', 'Interpreter', 'latex');
-ylabel('Shear stress, $\tau_x$ (kW/m$^2$K)', 'Interpreter', 'latex'); % Updated ylabel
-ylim([0 140]); % Set y-axis from 0 to 140 kW/m²K
+ylabel('Shear Stress, $\tau_x$ (Pa)', 'Interpreter', 'latex'); % Updated ylabel to Pa
+ylim([0 40]); % Set y-axis limits from 0 to 40
 legend('Approximated (Eq. 10, $\tau_x$)', 'Interpreter', 'latex'); % Updated legend
 title('Local Shear Stress $\tau_x$ vs. $\frac{x}{L}$ (Equation 10)', 'Interpreter', 'latex'); % Updated title
 grid on;
